@@ -1,0 +1,26 @@
+const questions = [
+  "شيء شفاف بحرف الميم",
+  "حيوان يبدأ بحرف الألف",
+  "مدينة تبدأ بحرف الباء",
+  "فاكهة تبدأ بحرف التاء"
+];
+
+let currentQuestion = 0;
+
+document.getElementById("start-btn").addEventListener("click", () => {
+  currentQuestion = 0;
+  document.getElementById("question").textContent = questions[currentQuestion];
+});
+
+document.getElementById("next-btn").addEventListener("click", () => {
+  currentQuestion = (currentQuestion + 1) % questions.length;
+  document.getElementById("question").textContent = questions[currentQuestion];
+});
+
+document.getElementById("team1-btn").addEventListener("click", () => {
+  alert("فريق 1 أجاب أولاً!");
+});
+
+document.getElementById("team2-btn").addEventListener("click", () => {
+  alert("فريق 2 أجاب أولاً!");
+});
