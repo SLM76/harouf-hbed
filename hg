@@ -1,0 +1,200 @@
+import random
+import time
+
+class MafiaGame:
+    def __init__(self):
+        self.players = []
+        self.roles = {}
+        self.mafia = []
+        self.doctor = None
+        self.detective = None
+        self.civilians = []
+        self.dead_players = []
+        self.round = 0
+        self.max_rounds = 8
+        self.game_over = False
+        self.winner = None
+
+    def assign_roles(self, player_names):
+        """تعيين الأدوار للاعبين"""
+        self.players = player_names.copy()
+        random.shuffle(self.players)
+        
+        # تعيين 2 مافيا
+        self.mafia = self.players[:2]
+        
+        # تعيين طبيب (دكتور)
+        self.doctor = self.players[2]
+        
+        # تعيين محقق (شايب)
+        self.detective = self.players[3]
+        
+        # الباقي مدنيين
+        self.civilians = self.players[4:]
+        
+        # إنشاء قاموس الأدوار
+        self.roles = {player: "مدني" for player in self.players}
+        for mafioso in self.mafia:
+            self.roles[mafioso] = "مافيا"
+        self.roles[self.doctor] = "طبيب"
+        self.roles[self.detective] = "محقق"
+
+    def start_game(self):
+        """بدء اللعبة"""
+        print("=== بداية لعبة المافيا ===")
+        print(f"اللاعبون: {', '.join(self.players)}")
+        print("\nتم تعيين الأدوار سراً لكل لاعب.")
+        
+        # إظهار الأدوار (لأغراض الاختبار)
+        if input("هل تريد رؤية الأدوار؟ (نعم/لا): ").lower() == "نعم":
+            for player, role in self.roles.items():
+                print(f"{player}: {role}")
+        
+        print("\n=== الجولة الأولى ===")
+        self.round = 1
+        self.play_round()
+
+    def play_round(self):
+        """تشغيل جولة واحدة"""
+        if self.round > self.max_rounds:
+            print("انتهت الجولات المسموحة. المافيا فازوا!")
+            self.game_over = True
+            self.winner = "مافيا"
+            return
+            
+        print(f"\n=== الجولة {self.round} ===")
+        print(f"اللاعبون الأحياء: {', '.join([p for p in self.players if p not in self.dead_players])}")
+        
+        # مرحلة المافيا (القتل)
+        if self.round == 1:
+            print("\n[مرحلة المافيا - القتل الأول]")
+        else:
+            print("\n[مرحلة المافيا - القتل]")
+        
+        # المافيا تختار ضحيتها
+        if len(self.mafia) > 0:
+            victim = None
+            while victim is None:
+                # في الواقع، هنا سيكون اختيار المافيا من خلال الاتفاق بينهم
+                # لكن في هذا الكود سنختار عشوائياً لأغراض المحاكاة
+                potential_victims = [p for p in self.players if p not in self.dead_players and p not in self.mafia]
+                if potential_victims:
+                    victim = random.choice(potential_victims)
+                    print(f"المافيا قرروا قتل: {victim}")
+                else:
+                    print("لا يوجد ضحايا محتملين للمافيا!")
+                    break
+            
+            # مرحلة الطبيب (الحماية)
+            if self.doctor not in self.dead_players:
+                protected = None
+                # الطبيب يحمي شخصاً (في الواقع سيختار اللاعب، هنا نختار عشوائياً)
+                potential_protected = [p for p in self.players if p not in self.dead_players]
+                if potential_protected:
+                    protected = random.choice(potential_protected)
+                    print(f"الطبيب قرر حماية: {protected}")
+                
+                # تحديد إذا كان القتل ناجحاً
+                if victim == protected:
+                    print(f"القتل فشل لأن الطبيب حامي {victim}!")
+                else:
+                    self.dead_players.append(victim)
+                    print(f"{victim} قد مات!")
+                    if victim in self.mafia:
+                        self.mafia.remove(victim)
+                    elif victim == self.doctor:
+                        self.doctor = None
+                    elif victim == self.detective:
+                        self.detective = None
+                    else:
+                        self.civilians.remove(victim)
+            else:
+                self.dead_players.append(victim)
+                print(f"{victim} قد مات!")
+                if victim in self.mafia:
+                    self.mafia.remove(victim)
+                elif victim == self.doctor:
+                    self.doctor = None
+                elif victim == self.detective:
+                    self.detective = None
+                else:
+                    self.civilians.remove(victim)
+        
+        # التحقق من حالة الفوز بعد القتل
+        self.check_win_conditions()
+        if self.game_over:
+            return
+        
+        # مرحلة المحقق (التحقيق)
+        if self.detective and self.detective not in self.dead_players:
+            print("\n[مرحلة المحقق - التحقيق]")
+            # المحقق يختار شخصاً للتحقق منه (هنا نختار عشوائياً)
+            potential_investigated = [p for p in self.players if p not in self.dead_players and p != self.detective]
+            if potential_investigated:
+                investigated = random.choice(potential_investigated)
+                print(f"المحقق يتحقق من: {investigated}")
+                print(f"دور {investigated} هو: {self.roles[investigated]}")
+        
+        # مرحلة التصويت
+        print("\n[مرحلة التصويت]")
+        alive_players = [p for p in self.players if p not in self.dead_players]
+        if len(alive_players) > 0:
+            # التصويت على طرد لاعب أو التخطي
+            # في الواقع، سيكون هناك تصويت حقيقي بين اللاعبين
+            # هنا سنختار عشوائياً بين التصويت على لاعب أو التخطي
+            if random.choice([True, False]):
+                # التصويت على لاعب
+                voted_out = random.choice(alive_players)
+                print(f"اللاعبون قرروا طرد: {voted_out}")
+                self.dead_players.append(voted_out)
+                if voted_out in self.mafia:
+                    self.mafia.remove(voted_out)
+                elif voted_out == self.doctor:
+                    self.doctor = None
+                elif voted_out == self.detective:
+                    self.detective = None
+                else:
+                    self.civilians.remove(voted_out)
+            else:
+                print("اللاعبون قرروا التخطي بدون طرد أي أحد.")
+        
+        # التحقق من حالة الفوز بعد التصويت
+        self.check_win_conditions()
+        if self.game_over:
+            return
+        
+        self.round += 1
+        time.sleep(2)  # انتظار بسيط بين الجولات
+        self.play_round()
+
+    def check_win_conditions(self):
+        """التحقق من شروط الفوز"""
+        alive_mafia = [p for p in self.mafia if p not in self.dead_players]
+        alive_civilians = [p for p in self.civilians if p not in self.dead_players]
+        alive_doctor = self.doctor if self.doctor and self.doctor not in self.dead_players else None
+        alive_detective = self.detective if self.detective and self.detective not in self.dead_players else None
+        
+        # المافيا يفوزون إذا كان عددهم يساوي أو أكثر من المدنيين
+        if len(alive_mafia) >= len(alive_civilians + ([alive_doctor] if alive_doctor else []) + ([alive_detective] if alive_detective else [])):
+            self.game_over = True
+            self.winner = "مافيا"
+            print("\n=== المافيا فازوا! ===")
+            print(f"أعضاء المافيا الباقين: {', '.join(alive_mafia)}")
+        
+        # المدنيون يفوزون إذا تم القضاء على جميع المافيا
+        elif len(alive_mafia) == 0:
+            self.game_over = True
+            self.winner = "مدنيون"
+            print("\n=== المدنيون فازوا! ===")
+            print("تم القضاء على جميع المافيا!")
+
+# مثال على استخدام الكود
+if __name__ == "__main__":
+    game = MafiaGame()
+    
+    # قائمة بأسماء اللاعبين (يمكن تغييرها حسب الرغبة)
+    players = ["علي", "محمد", "أحمد", "خالد", "سارة", "فاطمة", "نور", "يوسف", 
+               "مريم", "عمر", "حسن", "ليلى", "ناصر", "هبة"]
+    
+    game.assign_roles(players)
+    game.start_game()
